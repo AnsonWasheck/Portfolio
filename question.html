@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Question Screen</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #202123; /* Dark background similar to ChatGPT */
+      color: #fff;
+    }
+
+    .centered-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    .centered-container h1 {
+      font-size: 24px;
+      margin-bottom: 24px;
+      color: #fff;
+    }
+
+    /* The large prompt area with input and icons */
+    .prompt-bar {
+      display: flex;
+      align-items: center;
+      background-color: #343541;
+      border-radius: 24px;
+      padding: 0 16px;
+      max-width: 600px;
+      width: 100%;
+      box-sizing: border-box;
+      margin-bottom: 24px;
+    }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+    }
+
+    .prompt-input {
+      flex-grow: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-size: 16px;
+      padding: 12px;
+    }
+
+    .prompt-input::placeholder {
+      color: #ccc;
+    }
+
+    /* "Search" button inside the prompt */
+    .search-btn {
+      background-color: #40414f;
+      border: none;
+      color: #fff;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 14px;
+      margin-left: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .search-btn:hover {
+      opacity: 0.9;
+    }
+
+    /* Row of suggestion buttons at the bottom */
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    .suggestion-btn {
+      background-color: #343541;
+      border: none;
+      color: #fff;
+      border-radius: 20px;
+      padding: 8px 14px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .suggestion-btn:hover {
+      background-color: #40414f;
+    }
+  </style>
+</head>
+<body>
+  <div class="centered-container">
+    <h1>What can I help with?</h1>
+    <!-- Form that sends the user’s input to answer.html -->
+    <form action="answer.html" method="get" class="prompt-bar">
+      <!-- Left icon: plus -->
+      <button type="button" class="icon-btn" title="Add">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" 
+             stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
+
+      <!-- The main text input -->
+      <input 
+        type="text" 
+        name="q"
+        class="prompt-input" 
+        placeholder="Message ChatGPT" 
+        aria-label="Message ChatGPT"
+      />
+
+      <!-- "Search" button with magnifying glass icon -->
+      <button type="submit" class="search-btn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" 
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        Search
+      </button>
+
+      <!-- Right icon: microphone -->
+      <button type="button" class="icon-btn" title="Voice">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" 
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1v10m0 0c2.76 0 5-2.24 5-5m-5 5c-2.76 0-5-2.24-5-5m10 5v2a5 5 0 0 1-10 0v-2m5 5v4"></path>
+        </svg>
+      </button>
+    </form>
+
+    <!-- Suggestion buttons -->
+    <div class="suggestions">
+      <button type="button" class="suggestion-btn">
+        <!-- Example icon color -->
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ff7eb6" stroke-width="2" 
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+        </svg>
+        Solve
+      </button>
+
+      <button type="button" class="suggestion-btn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ffa500" stroke-width="2" 
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+        </svg>
+        Brainstorm
+      </button>
+
+      <button type="button" class="suggestion-btn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#00bfb3" stroke-width="2" 
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+        </svg>
+        Help me write
+      </button>
+
+      <button type="button" class="suggestion-btn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ff7eb6" stroke-width="2" 
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+        </svg>
+        Surprise me
+      </button>
+
+      <button type="button" class="suggestion-btn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#00bfb3" stroke-width="2" 
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+        </svg>
+        Summarize text
+      </button>
+
+      <button type="button" class="suggestion-btn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ff7eb6" stroke-width="2" 
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+        </svg>
+        More
+      </button>
+    </div>
+  </div>
+</body>
+</html>

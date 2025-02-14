@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Answer Screen</title>
+  <style>
+    /* Overall page settings */
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #202123; /* dark background */
+      color: #fff;
+    }
+
+    /* Top header with toggle button */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 50px;
+      background-color: #202123;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      z-index: 1000;
+    }
+
+    #toggleSidebar {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    /* Container for sidebar and main content using grid */
+    .container {
+      display: grid;
+      grid-template-columns: 250px 1fr; /* default: sidebar visible */
+      transition: grid-template-columns 0.3s ease;
+      margin-top: 50px; /* push content below header */
+      height: calc(100vh - 50px);
+    }
+    /* Hide sidebar by making its column 0; main content fills the space */
+    .container.sidebar-closed {
+      grid-template-columns: 0 1fr;
+    }
+
+    /* Sidebar styles */
+    .sidebar {
+      background-color: #343541;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow: hidden; /* hides content if width is 0 */
+    }
+    .sidebar p {
+      margin: 0 0 20px;
+      font-size: 14px;
+    }
+    .sidebar-btn {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 10px;
+      background-color: #3a3d48;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      border-radius: 20px;
+      font-size: 14px;
+    }
+    .sidebar-btn:hover {
+      background-color: #40414f;
+    }
+
+    /* Main content area */
+    .main-content {
+      background-color: #202123;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    /*
+      We wrap the actual .conversation in a .conversation-wrapper
+      to control scrolling & width. 
+    */
+    .conversation-wrapper {
+      flex-grow: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      /* Center the conversation and limit max width */
+      max-width: 800px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px 0; /* top/bottom spacing */
+      box-sizing: border-box;
+    }
+
+    /* The actual conversation container (flex column of messages) */
+    .conversation {
+      display: flex;
+      flex-direction: column;
+      gap: 12px; /* space between messages */
+      padding: 0 20px; /* left/right padding so messages don't touch edges */
+      box-sizing: border-box;
+    }
+
+    /* Centered placeholder (initial view) */
+    .placeholder {
+      margin: auto; 
+      text-align: center;
+      color: #ccc;
+      font-size: 18px;
+    }
+
+    /* Shared message base styling */
+    .message {
+      line-height: 1.4;
+      font-size: 14px;
+      word-wrap: break-word;
+      max-width: 100%; /* won't exceed the conversation width */
+    }
+
+    /* USER MESSAGE (bubble on the right) */
+    .user-message {
+      align-self: flex-end;
+      background-color: #40414f;
+      border-radius: 16px 16px 0 16px; /* top-left corner is sharper */
+      padding: 12px 16px;
+    }
+
+    /* BOT MESSAGE (no bubble, left-aligned) */
+    .bot-message {
+      align-self: flex-start;
+      /* no background or border */
+      color: #fff;
+      white-space: pre-wrap; /* preserve typed newlines if any */
+    }
+
+    /* Chat prompt area (aligned to question.html style) */
+    .chat-input-wrapper {
+      display: flex;
+      align-items: center;
+      background-color: #343541;
+      border: none;
+      border-radius: 24px;
+      padding: 0 16px;
+      margin: 10px auto 20px; 
+      max-width: 800px; 
+      width: calc(100% - 40px);
+      box-sizing: border-box;
+    }
+
+    .chat-input {
+      flex-grow: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-size: 14px;
+      resize: none;
+      padding: 12px 0;
+    }
+    .chat-input::placeholder {
+      color: #ccc;
+    }
+
+    .chat-input-icons {
+      display: flex;
+      gap: 8px;
+      margin-left: 8px;
+    }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      border-radius: 50%;
+    }
+    .icon-btn:hover {
+      background-color: rgba(255,255,255,0.1);
+    }
+  </style>
+</head>
+<body>
+  <!-- Header with toggle button -->
+  <div class="header">
+    <button id="toggleSidebar">&#9776;</button>
+  </div>
+
+  <!-- Container holding the sidebar and main content -->
+  <div class="container">
+    <div class="sidebar" id="sidebar">
+      <p>Placeholder text for the sidebar.</p>
+      <button class="sidebar-btn">Placeholder Button 1</button>
+      <button class="sidebar-btn">Placeholder Button 2</button>
+      <button class="sidebar-btn">Placeholder Button 3</button>
+    </div>
+    <div class="main-content">
+      <!-- Scrollable wrapper, centers & limits width -->
+      <div class="conversation-wrapper">
+        <div class="conversation">
+          <div class="placeholder">How can I help you?</div>
+        </div>
+      </div>
+
+      <!-- Chat Prompt Bar -->
+      <div class="chat-input-wrapper">
+        <textarea class="chat-input" placeholder="Send a message..."></textarea>
+        <div class="chat-input-icons">
+          <button class="icon-btn" title="Add">
+            <!-- Plus Icon -->
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
+          <button class="icon-btn" title="Emoji">
+            <!-- Smiley Face Icon -->
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+              <line x1="9" y1="9" x2="9.01" y2="9"></line>
+              <line x1="15" y1="9" x2="15.01" y2="9"></line>
+            </svg>
+          </button>
+          <button class="icon-btn" id="sendMessage" title="Send">
+            <!-- Send Icon -->
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript to toggle sidebar and handle message sending -->
+  <script>
+    // Toggle sidebar visibility
+    document.getElementById('toggleSidebar').addEventListener('click', function() {
+      document.querySelector('.container').classList.toggle('sidebar-closed');
+    });
+
+    // If there's a query parameter ?q= in the URL, display it as the first user message
+    window.addEventListener('DOMContentLoaded', function() {
+      const params = new URLSearchParams(window.location.search);
+      const initialMessage = params.get('q');
+
+      if (initialMessage) {
+        addUserMessage(initialMessage);
+      }
+    });
+
+    // When user clicks "Send"
+    document.getElementById('sendMessage').addEventListener('click', function() {
+      const textarea = document.querySelector('.chat-input');
+      const message = textarea.value.trim();
+      if (!message) return;  // Do nothing if empty
+
+      addUserMessage(message);
+      textarea.value = '';
+    });
+
+    // Adds a user message bubble (right side), then triggers a typed bot response
+    function addUserMessage(text) {
+      removePlaceholder();
+
+      const userMsg = document.createElement('div');
+      userMsg.classList.add('message', 'user-message');
+      userMsg.textContent = text;
+
+      const convo = document.querySelector('.conversation');
+      convo.appendChild(userMsg);
+      scrollToBottom();
+
+      // After user message, add the bot response
+      addBotResponse();
+    }
+
+    // Simulate a ChatGPT response with a typing effect
+    function addBotResponse() {
+      const convo = document.querySelector('.conversation');
+
+      // Create an empty div for the bot text
+      const botMsg = document.createElement('div');
+      botMsg.classList.add('message', 'bot-message');
+      convo.appendChild(botMsg);
+
+      // "Typing" effect
+      const LOREM_TEXT = 
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor " +
+        "incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud " +
+        "exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute " +
+        "irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat " +
+        "nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa " +
+        "qui officia deserunt mollit anim id est laborum.";
+
+      typeText(botMsg, LOREM_TEXT, 10); // 25ms per character
+    }
+
+    // Remove the initial placeholder if present
+    function removePlaceholder() {
+      const placeholder = document.querySelector('.conversation .placeholder');
+      if (placeholder) placeholder.remove();
+    }
+
+    // Scroll conversation to bottom
+    function scrollToBottom() {
+      const wrapper = document.querySelector('.conversation-wrapper');
+      wrapper.scrollTop = wrapper.scrollHeight;
+    }
+
+    // Typewriter effect for bot messages
+    function typeText(element, text, speed) {
+      let index = 0;
+      const timer = setInterval(() => {
+        element.textContent += text.charAt(index);
+        index++;
+        scrollToBottom();
+
+        if (index >= text.length) {
+          clearInterval(timer);
+        }
+      }, speed);
+    }
+  </script>
+</body>
+</html>
