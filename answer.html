@@ -260,7 +260,6 @@
     window.addEventListener('DOMContentLoaded', function() {
       const params = new URLSearchParams(window.location.search);
       const initialMessage = params.get('q');
-
       if (initialMessage) {
         addUserMessage(initialMessage);
       }
@@ -271,7 +270,6 @@
       const textarea = document.querySelector('.chat-input');
       const message = textarea.value.trim();
       if (!message) return;  // Do nothing if empty
-
       addUserMessage(message);
       textarea.value = '';
     });
@@ -279,38 +277,35 @@
     // Adds a user message bubble (right side), then triggers a typed bot response
     function addUserMessage(text) {
       removePlaceholder();
-
       const userMsg = document.createElement('div');
       userMsg.classList.add('message', 'user-message');
       userMsg.textContent = text;
-
       const convo = document.querySelector('.conversation');
       convo.appendChild(userMsg);
       scrollToBottom();
-
-      // After user message, add the bot response
-      addBotResponse();
+      // After user message, trigger bot response using the user's text
+      addBotResponse(text);
     }
 
-    // Simulate a ChatGPT response with a typing effect
-    function addBotResponse() {
+    // Modified: Get the bot response from the Flask backend using the user's query.
+    function addBotResponse(userQuery) {
       const convo = document.querySelector('.conversation');
-
       // Create an empty div for the bot text
       const botMsg = document.createElement('div');
       botMsg.classList.add('message', 'bot-message');
       convo.appendChild(botMsg);
 
-      // "Typing" effect
-      const LOREM_TEXT = 
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor " +
-        "incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud " +
-        "exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute " +
-        "irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat " +
-        "nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa " +
-        "qui officia deserunt mollit anim id est laborum.";
-
-      typeText(botMsg, LOREM_TEXT, 10); // 25ms per character
+      // Fetch the bot response from the Flask backend
+      fetch('/get_response?q=' + encodeURIComponent(userQuery))
+        .then(response => response.json())
+        .then(data => {
+          const botResponse = data.response;
+          typeText(botMsg, botResponse, 10); // type with a speed of 10ms per character
+        })
+        .catch(err => {
+          console.error(err);
+          typeText(botMsg, "Error retrieving response", 10);
+        });
     }
 
     // Remove the initial placeholder if present
@@ -332,7 +327,6 @@
         element.textContent += text.charAt(index);
         index++;
         scrollToBottom();
-
         if (index >= text.length) {
           clearInterval(timer);
         }
