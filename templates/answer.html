@@ -142,6 +142,31 @@
       white-space: pre-wrap; /* preserve typed newlines if any */
     }
 
+    /* Bot response container (for message + debug) */
+    .bot-response-container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    /* Debug toggle text styling */
+    .debug-toggle {
+      font-size: 10px;
+      color: #bbb;
+      cursor: pointer;
+      margin-top: 4px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    /* Debug info styling */
+    .debug-info {
+      font-size: 10px;
+      color: #ccc;
+      margin-top: 4px;
+      white-space: pre-wrap;
+    }
+
     /* Chat prompt area (aligned to question.html style) */
     .chat-input-wrapper {
       display: flex;
@@ -249,7 +274,7 @@
     </div>
   </div>
 
-  <!-- JavaScript to toggle sidebar and handle message sending -->
+  <!-- JavaScript to toggle sidebar, handle message sending, and debug toggle -->
   <script>
     // Toggle sidebar visibility
     document.getElementById('toggleSidebar').addEventListener('click', function() {
@@ -287,25 +312,76 @@
       addBotResponse(text);
     }
 
-    // Modified: Get the bot response from the Flask backend using the user's query.
+    // Get the bot response from the Flask backend using the user's query,
+    // and add a "see inside" toggle for debug info.
     function addBotResponse(userQuery) {
       const convo = document.querySelector('.conversation');
-      // Create an empty div for the bot text
+      
+      // Container for bot message and its debug info
+      const botContainer = document.createElement('div');
+      botContainer.classList.add('bot-response-container');
+      
+      // Bot message element
       const botMsg = document.createElement('div');
       botMsg.classList.add('message', 'bot-message');
-      convo.appendChild(botMsg);
-
-      // Fetch the bot response from the Flask backend
+      botContainer.appendChild(botMsg);
+      
+      // Debug toggle element (says "see inside")
+      const debugToggle = document.createElement('div');
+      debugToggle.classList.add('debug-toggle');
+      debugToggle.textContent = "see inside";
+      botContainer.appendChild(debugToggle);
+      
+      // Debug info element (hidden initially)
+      const debugInfo = document.createElement('div');
+      debugInfo.classList.add('debug-info');
+      debugInfo.style.display = 'none';
+      botContainer.appendChild(debugInfo);
+      
+      convo.appendChild(botContainer);
+      
+      // Fetch the bot response and debug info from the Flask backend
       fetch('/get_response?q=' + encodeURIComponent(userQuery))
         .then(response => response.json())
         .then(data => {
           const botResponse = data.response;
-          typeText(botMsg, botResponse, 10); // type with a speed of 10ms per character
+          let debugText = data.debug;
+          if (!debugText) {
+            debugText = "No debug info available.";
+          }
+          // Store the full debug text for typing effect.
+          // Initially clear the debug info element.
+          debugInfo.textContent = '';
+          
+          // Use typeText for the bot message.
+          typeText(botMsg, botResponse, 10);
+          
+          // When "see inside" is clicked, type out the debug text.
+          debugToggle.addEventListener('click', function() {
+            // Hide the debug toggle so it doesn't take space.
+            debugToggle.style.display = 'none';
+            // Ensure debugInfo is visible.
+            debugInfo.style.display = 'block';
+            // Clear any existing text.
+            debugInfo.textContent = '';
+            // Type out the debug text with a typing effect.
+            typeText(debugInfo, debugText, 10);
+          });
         })
         .catch(err => {
           console.error(err);
           typeText(botMsg, "Error retrieving response", 10);
         });
+      
+      // Show the "see inside" text only when mouse is over the bot message container
+      botContainer.addEventListener('mouseenter', function() {
+        debugToggle.style.opacity = 1;
+      });
+      botContainer.addEventListener('mouseleave', function() {
+        debugToggle.style.opacity = 0;
+      });
+      
+      scrollToBottom();
     }
 
     // Remove the initial placeholder if present
@@ -320,7 +396,7 @@
       wrapper.scrollTop = wrapper.scrollHeight;
     }
 
-    // Typewriter effect for bot messages
+    // Typewriter effect for messages (bot and debug)
     function typeText(element, text, speed) {
       let index = 0;
       const timer = setInterval(() => {
