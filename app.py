@@ -1,86 +1,77 @@
-from flask import Flask, render_template, request, jsonify
-import csv
-import difflib
 import os
-import re
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+
+from flask import Flask, render_template, request, jsonify
+import pandas as pd
+import numpy as np
+from sentence_transformers import SentenceTransformer, util
 
 app = Flask(__name__)
 
-CSV_FILE = os.path.join('data', 'conversations.csv')
-UNANSWERED_CSV = os.path.join('data', 'unanswered.csv')
-SIMILARITY_THRESHOLD = 0.55  # Adjust as needed
+# Load the semantic model (this model can be replaced with any appropriate one)
+model = SentenceTransformer('all-MiniLM-L6-v2')
 
-def preprocess(text):
+# Load the conversation CSV file.
+# Assumes the CSV has one sentence per row, with user responses on even-indexed rows (starting at 0)
+# and the corresponding bot responses on the following odd-indexed row.
+df = pd.read_csv('conversations.csv', header=None)
+
+# Separate user responses (even-indexed rows) and bot responses (odd-indexed rows)
+user_responses = df.iloc[::2, 0].tolist()  # every 2nd row starting from index 0
+bot_responses = df.iloc[1::2, 0].tolist()   # every 2nd row starting from index 1
+
+# Precompute embeddings for user responses for efficiency
+user_embeddings = model.encode(user_responses, convert_to_tensor=True)
+
+def get_bot_response(input_text):
     """
-    Normalize pronouns so that they are treated as the same word.
-    This function converts the text to lowercase and replaces specified words with "you".
+    Given an input text, compute its embedding, determine the best matching
+    stored user response using cosine similarity, and return both the corresponding
+    bot response and a debug message showing:
+      - The similarity score
+      - An explanation
+      - The matched user sentence from the CSV.
     """
-    text = text.lower()
-    # Replace words which can be used interchangeably (e.g., anson, ansons, he) with "you"
-    return re.sub(r'\b(anson|ansons|he)\b', 'you', text)
-
-def load_conversations():
-    if not os.path.exists(CSV_FILE):
-        print("CSV file not found. Please run learning mode first.")
-        return []
-    with open(CSV_FILE, 'r', newline='', encoding='utf-8') as csvfile:
-        reader = csv.reader(csvfile)
-        # Each row is expected to be a single-element list
-        lines = [row[0] for row in reader if row]
-    return lines
-
-# Load conversation data when the server starts
-conversation_data = load_conversations()
-
-def get_bot_response(user_input):
-    user_input_processed = preprocess(user_input)
-    best_similarity = 0.0
-    best_index = None  # Index of the best matching human prompt
-    # Compare only human prompt rows (even indices)
-    for i in range(0, len(conversation_data), 2):
-        stored_prompt = conversation_data[i]
-        stored_prompt_processed = preprocess(stored_prompt)
-        similarity = difflib.SequenceMatcher(None, user_input_processed, stored_prompt_processed).ratio()
-        if similarity > best_similarity:
-            best_similarity = similarity
-            best_index = i
-
-    if best_index is not None and best_similarity >= SIMILARITY_THRESHOLD:
-        if best_index + 1 < len(conversation_data):
-            return conversation_data[best_index + 1]
-        else:
-            return "Response not found for the best matching prompt."
-    else:
-        return "I don't have a suitable response yet."
-
-def log_unanswered(user_input):
-    """
-    Append the user input to unanswered.csv if no response was found.
-    """
-    # Ensure that the data directory exists
-    data_dir = os.path.dirname(UNANSWERED_CSV)
-    if not os.path.exists(data_dir):
-        os.makedirs(data_dir)
-    with open(UNANSWERED_CSV, 'a', newline='', encoding='utf-8') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow([user_input])
-    print(f"Logged unanswered query: {user_input}")
+    # Compute embedding for input
+    input_embedding = model.encode(input_text, convert_to_tensor=True)
+    
+    # Compute cosine similarities between the input and each stored user response embedding
+    cosine_scores = util.cos_sim(input_embedding, user_embeddings)[0]
+    
+    # Find the index with the highest similarity score
+    best_match_idx = int(np.argmax(cosine_scores))
+    
+    # Retrieve the corresponding bot response
+    best_bot_response = bot_responses[best_match_idx]
+    
+    # Get the similarity score and the matching user sentence
+    best_score = float(cosine_scores[best_match_idx])
+    matching_user_sentence = user_responses[best_match_idx]
+    
+    # Build the debug message
+    debug_msg = (
+        f"Similarity score: {best_score:.2f}. A score closer to 1.0 indicates a near-perfect semantic match.\n"
+        f"The sentence which semantically was decided to be closest to yours was: \"{matching_user_sentence}\""
+    )
+    
+    # Optionally, print debug information to the server console.
+    print(f"Debug: {debug_msg}")
+    
+    return best_bot_response, debug_msg
 
 @app.route('/')
 def index():
-    # Render the HTML interface
-    return render_template('index.html')
+    return render_template("index.html")
 
 @app.route('/get_response')
 def get_response():
     user_query = request.args.get('q', '')
-    if user_query:
-        response = get_bot_response(user_query)
-        # If no suitable response is found, log the query for later review.
-        if response == "I don't have a suitable response yet.":
-            log_unanswered(user_query)
-        return jsonify({'response': response})
-    return jsonify({'response': "No query provided."})
+    if not user_query:
+        return jsonify({'response': 'No query provided.', 'debug': 'No debug info available.'})
+    
+    # Get both the response and the debug message.
+    response, debug = get_bot_response(user_query)
+    return jsonify({'response': response, 'debug': debug})
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
